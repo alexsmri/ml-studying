@@ -138,28 +138,3 @@ class MLP:
 
     def parameters(self):
         return [p for layer in self.layers for p in layer.parameters()]
-
-xs = [
-    [2.0, 3.0, -1.0],
-    [3.0, -1.0, 0.5],
-    [0.5, 1.0, 1.0],
-    [1.0, 1.0, -1.0]
-]
-
-ys = [1.0, -1.0, -1.0, 1.0]
-
-mlp = MLP(3, [4, 4, 1])
-
-loss: Value = Value(1)
-
-while loss.data > 0.01:
-    ypred = [mlp(x) for x in xs]
-    loss = sum([(yout-ygt)**2 for ygt, yout in zip(ys, ypred)]) # type: ignore
-    print([y.data for y in ypred] , loss.data) # type: ignore
-    loss.backward()
-    for p in mlp.parameters():
-        p.data += -0.01 * p.grad
-else:
-    print(loss.data)
-    print(mlp.parameters)
-
