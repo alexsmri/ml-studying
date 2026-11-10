@@ -2,7 +2,7 @@ import urllib.request
 from pathlib import Path
 
 categories = [
-    "dog", "tree", "house", "car",
+    "cat", "dog", "tree", "house", "car",
     "bicycle", "airplane", "fish", "apple", "clock"
 ]
 
