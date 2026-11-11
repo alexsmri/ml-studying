@@ -4,7 +4,7 @@ from os import listdir
 from os.path import isfile, join
 import matplotlib.pyplot as plt
 import torch
-import random
+import torch.nn.functional as f
 
 WORKING_DIR = Path(__file__).parent
 BATCH_SIZE = 5
@@ -12,13 +12,16 @@ STOI = {}
 ITOS = {}
 
 
-def get_imps() -> list:
-    data = []
+def get_imps():
+    X, Y = [], []
     for t in STOI:
         t_data: np.ndarray = np.load(Path(WORKING_DIR / f"data/{t}.npy"))
-        t_img = torch.tensor(t_data)
-        data.append(t_img)
-    return data
+        for img in t_data:
+            X.append(img)
+            Y.append(STOI[t])
+    X = torch.tensor(np.array(X)).float()
+    Y = torch.tensor(np.array(Y)).long()
+    return X, Y
 
 def build_dicts():
     data_dir = Path(WORKING_DIR / "data/")
@@ -33,44 +36,59 @@ def build_dicts():
 
 
 def build_batch():
-    batch = []
-    targets = []
-    type_idx = random.sample(range(0, len(ITOS.keys())), BATCH_SIZE)
-    
-    for t in type_idx:
-        data = DATA[t]
-        data_idx = random.randrange(0, data.shape[0])
-        batch.append(data[data_idx])
-        print(data[data_idx].shape)
-        targets.append(t)
-
-    batch = torch.stack(batch)
-    return batch, targets
+    idx = torch.randint(0, Xtr.shape[0], (BATCH_SIZE,))
+    return Xtr[idx], Ytr[idx]
 
 
 build_dicts()
-DATA: list = get_imps()
-
-BATCH, TARGETS = build_batch()
-print(BATCH.shape)
+Xtr, Ytr = get_imps()
 
 NEURONS_1 = 2000
 NEURONS_2 = 2000
 OUTPUT_SIZE = len(STOI.keys())
 INPUT_SIZE = 784
 W1 = torch.randn(INPUT_SIZE, NEURONS_1)
-B1 = torch.randn(INPUT_SIZE, NEURONS_1)
+B1 = torch.randn(NEURONS_1)
 W2 = torch.randn(NEURONS_1, NEURONS_2)
-B2 = torch.randn(NEURONS_1, NEURONS_2)
+B2 = torch.randn(NEURONS_2)
 
 PARAMETERS = [W1, W2, B1, B2]
 
-# def forward(iterations: int):
-#     for i in range(iterations):
-#         data = build_batch(get_imp("airplane"))
-#         data = data.reshape((5, 28, 28))
-#         h1 = data @ W1 + B1
-#         h1 = h1.tanh()
-#         h2 = h1 @ W2 + B2
-#         out = h2.tanh()
+for p in PARAMETERS:
+    p.requires_grad = True
+
+
+def get_loss(p_logits, p_targets):
+    loss = f.cross_entropy(p_logits, p_targets)
+    return loss
+
+def train(iterations: int):
+    loss = 10
+
+    lossi = []
+
+    for i in range(iterations):
+
+        batch, targets = build_batch()
+        h1 = torch.tanh(batch @ W1 + B1)
+        logits = torch.tanh(h1 @ W2 + B2)
+
+        loss = get_loss(logits, targets)
+
+        for p in PARAMETERS:
+            p.grad = None
+
+        loss.backward()
+        
+        lr = 0.01
+        for p in PARAMETERS:
+            p.data += -lr*p.grad # type: ignore
+
+        lossi.append(loss.data)
+
+    plt.plot(range(iterations), lossi)
+    plt.show()
+    return loss
+
+train(2000)
 
