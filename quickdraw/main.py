@@ -169,3 +169,5 @@ train(10000)
 
 print(validate())
 
+# Best loss: 0.24326949555568073
+
