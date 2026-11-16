@@ -171,3 +171,5 @@ print(validate())
 
 # Best loss: 0.24326949555568073
 
+# Next todo: Understand hyperparameter setting
+
